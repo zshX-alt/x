@@ -1,0 +1,330 @@
+/**
+ * PROGRESS.JS
+ * Manajemen progress pembelajaran menggunakan LocalStorage
+ */
+
+// ========================================
+// CONSTANTS
+// ========================================
+
+const STORAGE_KEY = 'jlearn_progress';
+const STORAGE_VERSION = '1.0';
+
+// ========================================
+// PROGRESS MANAGEMENT
+// ========================================
+
+/**
+ * Initialize progress storage
+ * Buat storage baru jika belum ada
+ */
+function initializeProgress() {
+    const progress = localStorage.getItem(STORAGE_KEY);
+    
+    if (!progress) {
+        const initialProgress = {
+            version: STORAGE_VERSION,
+            lessons: {},
+            lastUpdated: new Date().toISOString()
+        };
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(initialProgress));
+        return initialProgress.lessons;
+    }
+    
+    return JSON.parse(progress).lessons;
+}
+
+/**
+ * Get progress dari LocalStorage
+ * @returns {Object} Progress object dengan lesson IDs sebagai keys
+ */
+function getProgress() {
+    try {
+        const progress = localStorage.getItem(STORAGE_KEY);
+        
+        if (!progress) {
+            return initializeProgress();
+        }
+        
+        const data = JSON.parse(progress);
+        return data.lessons || {};
+    } catch (error) {
+        console.error('Error reading progress:', error);
+        return {};
+    }
+}
+
+/**
+ * Save progress untuk satu lesson
+ * @param {string} lessonId - ID dari lesson
+ * @param {Object} lessonData - Data progress lesson (quiz score, completed, etc)
+ */
+function saveProgress(lessonId, lessonData) {
+    try {
+        const progressData = localStorage.getItem(STORAGE_KEY);
+        let data;
+        
+        if (!progressData) {
+            data = {
+                version: STORAGE_VERSION,
+                lessons: {},
+                lastUpdated: new Date().toISOString()
+            };
+        } else {
+            data = JSON.parse(progressData);
+        }
+        
+        // Update lesson progress
+        data.lessons[lessonId] = {
+            ...lessonData,
+            lastAttempt: new Date().toISOString()
+        };
+        
+        data.lastUpdated = new Date().toISOString();
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        
+        console.log(`✅ Progress saved for lesson: ${lessonId}`);
+        return true;
+    } catch (error) {
+        console.error('Error saving progress:', error);
+        return false;
+    }
+}
+
+/**
+ * Mark lesson sebagai completed
+ * @param {string} lessonId - ID dari lesson
+ * @param {number} score - Score dari quiz (0-100)
+ */
+function markLessonComplete(lessonId, score = 100) {
+    const lessonData = {
+        completed: true,
+        score: score,
+        completedAt: new Date().toISOString()
+    };
+    
+    return saveProgress(lessonId, lessonData);
+}
+
+/**
+ * Check apakah lesson sudah completed
+ * @param {string} lessonId - ID dari lesson
+ * @returns {boolean} True jika completed
+ */
+function isLessonCompleted(lessonId) {
+    const progress = getProgress();
+    return progress[lessonId] && progress[lessonId].completed === true;
+}
+
+/**
+ * Get score untuk lesson tertentu
+ * @param {string} lessonId - ID dari lesson
+ * @returns {number} Score (0-100) atau null jika belum ada
+ */
+function getLessonScore(lessonId) {
+    const progress = getProgress();
+    return progress[lessonId] ? progress[lessonId].score : null;
+}
+
+/**
+ * Calculate total progress percentage
+ * @param {Array} allLessonIds - Array of all lesson IDs
+ * @returns {number} Percentage (0-100)
+ */
+function calculateTotalProgress(allLessonIds) {
+    if (!allLessonIds || allLessonIds.length === 0) {
+        return 0;
+    }
+    
+    const progress = getProgress();
+    let completed = 0;
+    
+    allLessonIds.forEach(lessonId => {
+        if (progress[lessonId] && progress[lessonId].completed) {
+            completed++;
+        }
+    });
+    
+    return Math.round((completed / allLessonIds.length) * 100);
+}
+
+/**
+ * Calculate category progress
+ * @param {Array} categoryLessonIds - Array of lesson IDs in category
+ * @returns {Object} { completed: number, total: number, percentage: number }
+ */
+function calculateCategoryProgress(categoryLessonIds) {
+    if (!categoryLessonIds || categoryLessonIds.length === 0) {
+        return { completed: 0, total: 0, percentage: 0 };
+    }
+    
+    const progress = getProgress();
+    let completed = 0;
+    
+    categoryLessonIds.forEach(lessonId => {
+        if (progress[lessonId] && progress[lessonId].completed) {
+            completed++;
+        }
+    });
+    
+    return {
+        completed: completed,
+        total: categoryLessonIds.length,
+        percentage: Math.round((completed / categoryLessonIds.length) * 100)
+    };
+}
+
+/**
+ * Reset semua progress (dengan konfirmasi)
+ * @returns {boolean} True jika berhasil direset
+ */
+function resetProgress() {
+    const confirm = window.confirm(
+        'Apakah kamu yakin ingin mereset semua progress? Tindakan ini tidak bisa dibatalkan!'
+    );
+    
+    if (confirm) {
+        try {
+            localStorage.removeItem(STORAGE_KEY);
+            console.log('🔄 All progress has been reset');
+            
+            // Reload page untuk update UI
+            window.location.reload();
+            return true;
+        } catch (error) {
+            console.error('Error resetting progress:', error);
+            return false;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Export progress sebagai JSON (untuk backup)
+ * @returns {string} JSON string dari progress data
+ */
+function exportProgress() {
+    try {
+        const progressData = localStorage.getItem(STORAGE_KEY);
+        
+        if (!progressData) {
+            return JSON.stringify({ message: 'No progress data found' });
+        }
+        
+        return progressData;
+    } catch (error) {
+        console.error('Error exporting progress:', error);
+        return null;
+    }
+}
+
+/**
+ * Import progress dari JSON (untuk restore backup)
+ * @param {string} jsonData - JSON string dari progress data
+ * @returns {boolean} True jika berhasil
+ */
+function importProgress(jsonData) {
+    try {
+        // Validate JSON
+        const data = JSON.parse(jsonData);
+        
+        if (!data.version || !data.lessons) {
+            throw new Error('Invalid progress data format');
+        }
+        
+        // Save to localStorage
+        localStorage.setItem(STORAGE_KEY, jsonData);
+        
+        console.log('✅ Progress imported successfully');
+        
+        // Reload page untuk update UI
+        window.location.reload();
+        return true;
+    } catch (error) {
+        console.error('Error importing progress:', error);
+        alert('Error: Invalid progress data format');
+        return false;
+    }
+}
+
+/**
+ * Get progress statistics
+ * @returns {Object} Statistics object
+ */
+function getProgressStatistics() {
+    const progress = getProgress();
+    const lessonIds = Object.keys(progress);
+    
+    if (lessonIds.length === 0) {
+        return {
+            totalLessons: 0,
+            completedLessons: 0,
+            averageScore: 0,
+            lastActivity: null
+        };
+    }
+    
+    let completedCount = 0;
+    let totalScore = 0;
+    let scoreCount = 0;
+    let lastActivity = null;
+    
+    lessonIds.forEach(lessonId => {
+        const lesson = progress[lessonId];
+        
+        if (lesson.completed) {
+            completedCount++;
+        }
+        
+        if (lesson.score !== undefined) {
+            totalScore += lesson.score;
+            scoreCount++;
+        }
+        
+        if (lesson.lastAttempt) {
+            const attemptDate = new Date(lesson.lastAttempt);
+            if (!lastActivity || attemptDate > lastActivity) {
+                lastActivity = attemptDate;
+            }
+        }
+    });
+    
+    return {
+        totalLessons: lessonIds.length,
+        completedLessons: completedCount,
+        averageScore: scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0,
+        lastActivity: lastActivity ? lastActivity.toISOString() : null
+    };
+}
+
+// ========================================
+// INITIALIZE ON LOAD
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize progress storage jika belum ada
+    initializeProgress();
+    
+    // Log statistics ke console (untuk debugging)
+    const stats = getProgressStatistics();
+    console.log('📊 Progress Statistics:', stats);
+});
+
+// ========================================
+// EXPOSE TO WINDOW (agar bisa diakses dari file lain)
+// ========================================
+
+window.getProgress = getProgress;
+window.saveProgress = saveProgress;
+window.markLessonComplete = markLessonComplete;
+window.isLessonCompleted = isLessonCompleted;
+window.getLessonScore = getLessonScore;
+window.calculateTotalProgress = calculateTotalProgress;
+window.calculateCategoryProgress = calculateCategoryProgress;
+window.resetProgress = resetProgress;
+window.exportProgress = exportProgress;
+window.importProgress = importProgress;
+window.getProgressStatistics = getProgressStatistics;
