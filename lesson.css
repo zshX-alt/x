@@ -1,0 +1,465 @@
+/* ==========================================
+   LESSON PAGE CSS
+   Design: Split layout - Materi (kiri) + Quiz (kanan)
+   ========================================== */
+
+/* === LESSON CONTAINER === */
+.lesson-container {
+    display: flex;
+    min-height: calc(100vh - 70px);
+    background: var(--bg-light);
+}
+
+/* === SIDEBAR === */
+.lesson-sidebar {
+    width: 280px;
+    background: var(--white);
+    border-right: 2px solid var(--gray-200);
+    padding: var(--spacing-lg);
+    position: sticky;
+    top: 70px;
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.sidebar-header {
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    text-decoration: none;
+    color: var(--gray-700);
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.back-button:hover {
+    background: var(--gray-100);
+    color: var(--primary);
+}
+
+.arrow-left {
+    font-size: 1.25rem;
+    transition: transform var(--transition-fast);
+}
+
+.back-button:hover .arrow-left {
+    transform: translateX(-4px);
+}
+
+/* Lesson Meta */
+.lesson-meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 0.375rem 0.875rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: fit-content;
+}
+
+.lesson-sidebar-title {
+    font-size: 1.25rem;
+    color: var(--dark);
+    line-height: 1.4;
+}
+
+/* Progress in Sidebar */
+.lesson-progress-sidebar {
+    padding: var(--spacing-md);
+    background: var(--gray-100);
+    border-radius: var(--radius-md);
+}
+
+.lesson-progress-sidebar .progress-label {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: var(--spacing-xs);
+    font-weight: 600;
+}
+
+.lesson-progress-sidebar .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--gray-300);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: var(--spacing-xs);
+}
+
+.lesson-progress-sidebar .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), #4CAF50);
+    border-radius: var(--radius-sm);
+    transition: width 0.5s ease;
+}
+
+.lesson-progress-sidebar .progress-text {
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    font-weight: 600;
+}
+
+/* === MAIN CONTENT === */
+.lesson-main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    position: relative;
+}
+
+/* Content Section (Materi) */
+.content-section {
+    padding: var(--spacing-2xl) var(--spacing-xl);
+    max-width: 900px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.content-header {
+    margin-bottom: var(--spacing-lg);
+    animation: fadeInUp 0.6s ease;
+}
+
+.content-title {
+    font-size: 2.5rem;
+    color: var(--dark);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Content Body - Materi */
+.content-body {
+    background: var(--white);
+    padding: var(--spacing-xl);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    line-height: 1.8;
+    animation: fadeInUp 0.7s ease;
+}
+
+.content-body h2 {
+    color: var(--dark);
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 2px solid var(--primary);
+}
+
+.content-body h3 {
+    color: var(--gray-900);
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.content-body p {
+    color: var(--gray-700);
+    margin-bottom: var(--spacing-sm);
+}
+
+.content-body strong {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Hiragana Grid (khusus untuk lesson hiragana) */
+.hiragana-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0;
+}
+
+.char-item {
+    background: var(--gray-100);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+    transition: all var(--transition-fast);
+    border: 2px solid transparent;
+}
+
+.char-item:hover {
+    background: var(--white);
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+}
+
+.char-item .hiragana {
+    display: block;
+    font-family: var(--font-japanese);
+    font-size: 2.5rem;
+    color: var(--dark);
+    margin-bottom: var(--spacing-xs);
+}
+
+.char-item .romaji {
+    display: block;
+    font-size: 1rem;
+    color: var(--gray-600);
+    font-weight: 600;
+}
+
+/* Content Footer */
+.content-footer {
+    margin-top: var(--spacing-xl);
+    text-align: center;
+    animation: fadeInUp 0.8s ease;
+}
+
+/* === QUIZ SECTION === */
+.quiz-section {
+    position: fixed;
+    top: 70px;
+    right: -100%;
+    width: 450px;
+    height: calc(100vh - 70px);
+    background: var(--white);
+    box-shadow: var(--shadow-xl);
+    transition: right var(--transition-normal);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+}
+
+.quiz-section.active {
+    right: 0;
+}
+
+.quiz-header {
+    padding: var(--spacing-lg);
+    border-bottom: 2px solid var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+    color: var(--white);
+}
+
+.quiz-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close-quiz {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: var(--white);
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-quiz:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.quiz-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+}
+
+/* Quiz Question */
+.quiz-question {
+    margin-bottom: var(--spacing-xl);
+}
+
+.question-number {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.question-text {
+    font-size: 1.25rem;
+    color: var(--dark);
+    font-weight: 600;
+    margin-bottom: var(--spacing-md);
+    line-height: 1.6;
+}
+
+/* Quiz Options */
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.quiz-option {
+    padding: var(--spacing-md);
+    background: var(--gray-100);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-size: 1rem;
+    text-align: left;
+}
+
+.quiz-option:hover {
+    background: var(--white);
+    border-color: var(--primary);
+    transform: translateX(4px);
+}
+
+.quiz-option.selected {
+    background: var(--white);
+    border-color: var(--primary);
+    font-weight: 600;
+}
+
+.quiz-option.correct {
+    background: rgba(46, 213, 115, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.quiz-option.incorrect {
+    background: rgba(235, 87, 87, 0.1);
+    border-color: #EB5757;
+    color: #EB5757;
+}
+
+.quiz-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Quiz Navigation */
+.quiz-navigation {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
+}
+
+.quiz-navigation button {
+    flex: 1;
+}
+
+/* Quiz Result */
+.quiz-result {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.result-score {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.result-message {
+    font-size: 1.25rem;
+    color: var(--dark);
+    margin-bottom: var(--spacing-md);
+}
+
+.result-details {
+    background: var(--gray-100);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.result-details p {
+    margin: var(--spacing-xs) 0;
+    color: var(--gray-700);
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 1200px) {
+    .quiz-section {
+        width: 400px;
+    }
+}
+
+@media (max-width: 968px) {
+    .lesson-container {
+        flex-direction: column;
+    }
+    
+    .lesson-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        top: 0;
+        border-right: none;
+        border-bottom: 2px solid var(--gray-200);
+    }
+    
+    .quiz-section {
+        width: 100%;
+        right: -100%;
+    }
+    
+    .quiz-section.active {
+        right: 0;
+    }
+    
+    .content-section {
+        padding: var(--spacing-lg);
+    }
+    
+    .content-title {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .content-section {
+        padding: var(--spacing-md);
+    }
+    
+    .content-body {
+        padding: var(--spacing-md);
+    }
+    
+    .content-title {
+        font-size: 1.75rem;
+    }
+    
+    .hiragana-grid {
+        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+        gap: var(--spacing-xs);
+    }
+    
+    .char-item .hiragana {
+        font-size: 2rem;
+    }
+    
+    .quiz-body {
+        padding: var(--spacing-md);
+    }
+    
+    .question-text {
+        font-size: 1.125rem;
+    }
+}
