@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Materi Pembelajaran{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="dashboard-header">
+    <div class="container">
+        <h1 class="dashboard-title">Dashboard Pembelajaran</h1>
+        <p class="dashboard-subtitle">Pilih kategori untuk mulai belajar</p>
+        
+        <!-- Progress overview -->
+        <div class="progress-overview" id="progress-overview">
+            <div class="progress-card">
+                <span class="progress-label">Total Progress</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="total-progress" style="width: 0%"></div>
+                </div>
+                <span class="progress-text" id="progress-text">0% Complete</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="categories-section">
+    <div class="container">
+        <div class="categories-grid">
+            {% for category_id, category in materials.items() %}
+            <div class="category-card" data-category="{{ category_id }}">
+                <div class="category-header" style="background: {{ category.color }}">
+                    <h2 class="category-name">{{ category.name }}</h2>
+                    <p class="category-description">{{ category.description }}</p>
+                </div>
+                
+                <div class="category-body">
+                    <div class="lessons-list">
+                        {% for lesson in category.lessons %}
+                        <a href="/lesson/{{ lesson.id }}" class="lesson-item" data-lesson-id="{{ lesson.id }}">
+                            <div class="lesson-check">
+                                <input type="checkbox" 
+                                       id="check-{{ lesson.id }}" 
+                                       class="lesson-checkbox"
+                                       {% if lesson.completed %}checked{% endif %}
+                                       onclick="event.preventDefault()">
+                                <label for="check-{{ lesson.id }}"></label>
+                            </div>
+                            <div class="lesson-info">
+                                <h3 class="lesson-title">{{ lesson.title }}</h3>
+                            </div>
+                            <div class="lesson-arrow">→</div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="category-footer">
+                        <span class="category-progress" data-category="{{ category_id }}">
+                            <span class="progress-count">0</span> / {{ category.lessons|length }} selesai
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Modal untuk progress detail (opsional) -->
+<div class="modal" id="progress-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Progress Pembelajaran Kamu</h2>
+            <button class="modal-close" id="close-modal">&times;</button>
+        </div>
+        <div class="modal-body" id="progress-details">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize progress tracking saat halaman load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateAllProgress();
+        
+        // Event listener untuk progress link di navbar
+        document.getElementById('progress-link').addEventListener('click', function(e) {
+            e.preventDefault();
+            showProgressModal();
+        });
+        
+        // Close modal
+        document.getElementById('close-modal').addEventListener('click', function() {
+            document.getElementById('progress-modal').classList.remove('active');
+        });
+        
+        // Close modal ketika klik di luar
+        document.getElementById('progress-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+    
+    /**
+     * Update semua progress indicator di dashboard
+     */
+    function updateAllProgress() {
+        const progress = getProgress();
+        
+        // Update per-category progress
+        document.querySelectorAll('.category-progress').forEach(element => {
+            const category = element.dataset.category;
+            const lessons = document.querySelectorAll(
+                `.category-card[data-category="${category}"] .lesson-item`
+            );
+            
+            let completed = 0;
+            lessons.forEach(lesson => {
+                const lessonId = lesson.dataset.lessonId;
+                const checkbox = lesson.querySelector('.lesson-checkbox');
+                
+                if (progress[lessonId]) {
+                    checkbox.checked = true;
+                    lesson.classList.add('completed');
+                    completed++;
+                } else {
+                    checkbox.checked = false;
+                    lesson.classList.remove('completed');
+                }
+            });
+            
+            element.querySelector('.progress-count').textContent = completed;
+        });
+        
+        // Update total progress
+        const allLessons = document.querySelectorAll('.lesson-item');
+        const totalLessons = allLessons.length;
+        let totalCompleted = 0;
+        
+        allLessons.forEach(lesson => {
+            if (progress[lesson.dataset.lessonId]) {
+                totalCompleted++;
+            }
+        });
+        
+        const percentage = totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
+        document.getElementById('total-progress').style.width = percentage + '%';
+        document.getElementById('progress-text').textContent = percentage + '% Complete';
+    }
+    
+    /**
+     * Show progress modal
+     */
+    function showProgressModal() {
+        const progress = getProgress();
+        const modal = document.getElementById('progress-modal');
+        const detailsContainer = document.getElementById('progress-details');
+        
+        // Build progress details
+        let html = '<div class="progress-list">';
+        
+        const categories = {
+            'fase-fondasi': 'Fase Fondasi',
+            'n5': 'Level N5',
+            'n4': 'Level N4'
+        };
+        
+        for (const [categoryId, categoryName] of Object.entries(categories)) {
+            const lessons = document.querySelectorAll(
+                `.category-card[data-category="${categoryId}"] .lesson-item`
+            );
+            
+            html += `<div class="progress-category">
+                        <h3>${categoryName}</h3>
+                        <ul>`;
+            
+            lessons.forEach(lesson => {
+                const lessonId = lesson.dataset.lessonId;
+                const lessonTitle = lesson.querySelector('.lesson-title').textContent;
+                const isCompleted = progress[lessonId] || false;
+                const status = isCompleted ? '✓' : '○';
+                const statusClass = isCompleted ? 'completed' : 'pending';
+                
+                html += `<li class="${statusClass}">
+                            <span class="status-icon">${status}</span>
+                            ${lessonTitle}
+                         </li>`;
+            });
+            
+            html += `</ul></div>`;
+        }
+        
+        html += '</div>';
+        
+        detailsContainer.innerHTML = html;
+        modal.classList.add('active');
+    }
+</script>
+{% endblock %}
