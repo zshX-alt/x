@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lesson.title }} - Belajar{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/lesson.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="lesson-container">
+    <!-- Sidebar Navigation -->
+    <aside class="lesson-sidebar">
+        <div class="sidebar-header">
+            <a href="/dashboard" class="back-button">
+                <span class="arrow-left">←</span>
+                Kembali
+            </a>
+        </div>
+        
+        <div class="lesson-meta">
+            <span class="category-badge">{{ lesson.category }}</span>
+            <h2 class="lesson-sidebar-title">{{ lesson.title }}</h2>
+        </div>
+        
+        <div class="lesson-progress-sidebar">
+            <p class="progress-label">Progress Lesson Ini</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="lesson-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-text" id="lesson-progress-text">0% selesai</span>
+        </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="lesson-main">
+        <!-- Materi Section (Kiri) -->
+        <div class="content-section">
+            <div class="content-header">
+                <h1 class="content-title">{{ lesson.title }}</h1>
+            </div>
+            
+            <div class="content-body" id="lesson-content">
+                {{ lesson.content|safe }}
+            </div>
+            
+            <div class="content-footer">
+                <button class="btn btn-primary" id="start-quiz-btn">
+                    Mulai Latihan
+                    <span class="arrow">→</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Quiz Section (Kanan) -->
+        <div class="quiz-section" id="quiz-section">
+            <div class="quiz-header">
+                <h2>Latihan Soal</h2>
+                <button class="close-quiz" id="close-quiz-btn">✕</button>
+            </div>
+            
+            <div class="quiz-body" id="quiz-body">
+                <!-- Quiz content akan diisi oleh JavaScript -->
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Quiz data (hidden, akan diambil oleh JavaScript) -->
+<script id="quiz-data" type="application/json">
+    {{ lesson.quiz|tojson|safe }}
+</script>
+
+<script id="lesson-id-data" type="application/json">
+    "{{ lesson_id }}"
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load quiz data
+        const quizData = JSON.parse(document.getElementById('quiz-data').textContent);
+        const lessonId = JSON.parse(document.getElementById('lesson-id-data').textContent);
+        
+        // Initialize quiz
+        const quiz = new Quiz(quizData, lessonId);
+        
+        // Start quiz button
+        document.getElementById('start-quiz-btn').addEventListener('click', function() {
+            document.getElementById('quiz-section').classList.add('active');
+            quiz.start();
+        });
+        
+        // Close quiz button
+        document.getElementById('close-quiz-btn').addEventListener('click', function() {
+            document.getElementById('quiz-section').classList.remove('active');
+        });
+        
+        // Update lesson progress indicator
+        updateLessonProgress();
+    });
+    
+    /**
+     * Update progress indicator untuk lesson ini
+     */
+    function updateLessonProgress() {
+        const lessonId = JSON.parse(document.getElementById('lesson-id-data').textContent);
+        const progress = getProgress();
+        
+        if (progress[lessonId]) {
+            document.getElementById('lesson-progress-bar').style.width = '100%';
+            document.getElementById('lesson-progress-text').textContent = '100% selesai';
+        }
+    }
+</script>
+{% endblock %}
