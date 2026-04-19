@@ -1,0 +1,359 @@
+/**
+ * QUIZ.JS
+ * Manajemen quiz dan latihan soal
+ */
+
+/**
+ * Quiz Class
+ * Menghandle semua logic untuk quiz
+ */
+class Quiz {
+    constructor(questions, lessonId) {
+        this.questions = questions;
+        this.lessonId = lessonId;
+        this.currentQuestionIndex = 0;
+        this.userAnswers = [];
+        this.score = 0;
+        this.quizContainer = document.getElementById('quiz-body');
+    }
+    
+    /**
+     * Mulai quiz
+     */
+    start() {
+        this.currentQuestionIndex = 0;
+        this.userAnswers = [];
+        this.score = 0;
+        
+        this.renderQuestion();
+    }
+    
+    /**
+     * Render pertanyaan saat ini
+     */
+    renderQuestion() {
+        const question = this.questions[this.currentQuestionIndex];
+        const questionNumber = this.currentQuestionIndex + 1;
+        const totalQuestions = this.questions.length;
+        
+        let html = `
+            <div class="quiz-question">
+                <p class="question-number">Pertanyaan ${questionNumber} dari ${totalQuestions}</p>
+                <h3 class="question-text">${question.question}</h3>
+                
+                <div class="quiz-options">
+        `;
+        
+        question.options.forEach((option, index) => {
+            html += `
+                <button class="quiz-option" data-index="${index}">
+                    ${option}
+                </button>
+            `;
+        });
+        
+        html += `
+                </div>
+                
+                <div class="quiz-navigation">
+                    <button class="btn btn-secondary" id="quiz-submit-btn" disabled>
+                        Jawab
+                    </button>
+                </div>
+                
+                <div id="feedback-container"></div>
+            </div>
+        `;
+        
+        this.quizContainer.innerHTML = html;
+        
+        // Event listeners untuk options
+        this.attachOptionListeners();
+    }
+    
+    /**
+     * Attach event listeners ke option buttons
+     */
+    attachOptionListeners() {
+        const options = this.quizContainer.querySelectorAll('.quiz-option');
+        const submitBtn = document.getElementById('quiz-submit-btn');
+        let selectedIndex = null;
+        
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                // Remove previous selection
+                options.forEach(opt => opt.classList.remove('selected'));
+                
+                // Mark as selected
+                option.classList.add('selected');
+                selectedIndex = parseInt(option.dataset.index);
+                
+                // Enable submit button
+                submitBtn.disabled = false;
+            });
+        });
+        
+        submitBtn.addEventListener('click', () => {
+            if (selectedIndex !== null) {
+                this.submitAnswer(selectedIndex);
+            }
+        });
+    }
+    
+    /**
+     * Submit jawaban user
+     */
+    submitAnswer(selectedIndex) {
+        const question = this.questions[this.currentQuestionIndex];
+        const isCorrect = selectedIndex === question.correct;
+        
+        // Simpan jawaban user
+        this.userAnswers.push({
+            questionIndex: this.currentQuestionIndex,
+            selectedIndex: selectedIndex,
+            correct: isCorrect
+        });
+        
+        if (isCorrect) {
+            this.score++;
+        }
+        
+        // Show feedback
+        this.showFeedback(isCorrect, question.correct);
+        
+        // Disable all options dan submit button
+        const options = this.quizContainer.querySelectorAll('.quiz-option');
+        const submitBtn = document.getElementById('quiz-submit-btn');
+        
+        options.forEach((option, index) => {
+            option.disabled = true;
+            
+            if (index === question.correct) {
+                option.classList.add('correct');
+            } else if (index === selectedIndex && !isCorrect) {
+                option.classList.add('incorrect');
+            }
+        });
+        
+        submitBtn.disabled = true;
+        
+        // Show next/finish button
+        this.showNextButton();
+    }
+    
+    /**
+     * Show feedback untuk jawaban
+     */
+    showFeedback(isCorrect, correctIndex) {
+        const question = this.questions[this.currentQuestionIndex];
+        const feedbackContainer = document.getElementById('feedback-container');
+        
+        const feedbackHtml = `
+            <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+                <p class="feedback-icon">${isCorrect ? '✓' : '✗'}</p>
+                <p class="feedback-text">
+                    ${isCorrect ? 'Benar!' : `Salah. Jawaban yang benar: ${question.options[correctIndex]}`}
+                </p>
+            </div>
+        `;
+        
+        feedbackContainer.innerHTML = feedbackHtml;
+    }
+    
+    /**
+     * Show button untuk next question atau finish
+     */
+    showNextButton() {
+        const navigationContainer = this.quizContainer.querySelector('.quiz-navigation');
+        const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
+        
+        const buttonHtml = `
+            <button class="btn btn-primary" id="quiz-next-btn">
+                ${isLastQuestion ? 'Selesai' : 'Lanjut'} →
+            </button>
+        `;
+        
+        navigationContainer.innerHTML = buttonHtml;
+        
+        const nextBtn = document.getElementById('quiz-next-btn');
+        nextBtn.addEventListener('click', () => {
+            if (isLastQuestion) {
+                this.finish();
+            } else {
+                this.nextQuestion();
+            }
+        });
+    }
+    
+    /**
+     * Pindah ke pertanyaan berikutnya
+     */
+    nextQuestion() {
+        this.currentQuestionIndex++;
+        this.renderQuestion();
+    }
+    
+    /**
+     * Finish quiz dan show results
+     */
+    finish() {
+        const percentage = Math.round((this.score / this.questions.length) * 100);
+        
+        // Save progress
+        const isPassed = percentage >= 70; // 70% passing grade
+        
+        if (isPassed) {
+            markLessonComplete(this.lessonId, percentage);
+        } else {
+            saveProgress(this.lessonId, {
+                completed: false,
+                score: percentage,
+                lastAttempt: new Date().toISOString()
+            });
+        }
+        
+        this.renderResults(percentage, isPassed);
+    }
+    
+    /**
+     * Render hasil quiz
+     */
+    renderResults(percentage, isPassed) {
+        const correctAnswers = this.score;
+        const totalQuestions = this.questions.length;
+        
+        let message = '';
+        let emoji = '';
+        
+        if (percentage >= 90) {
+            message = 'Luar biasa! Sempurna!';
+            emoji = '🎉';
+        } else if (percentage >= 70) {
+            message = 'Bagus! Kamu lulus!';
+            emoji = '✅';
+        } else if (percentage >= 50) {
+            message = 'Lumayan, tapi masih perlu latihan lagi.';
+            emoji = '📚';
+        } else {
+            message = 'Yuk coba lagi! Baca materinya sekali lagi.';
+            emoji = '💪';
+        }
+        
+        const html = `
+            <div class="quiz-result">
+                <div class="result-emoji">${emoji}</div>
+                <h2 class="result-score">${percentage}%</h2>
+                <p class="result-message">${message}</p>
+                
+                <div class="result-details">
+                    <p><strong>Benar:</strong> ${correctAnswers} dari ${totalQuestions}</p>
+                    <p><strong>Status:</strong> ${isPassed ? '✅ Lulus' : '❌ Belum Lulus'}</p>
+                </div>
+                
+                <div class="result-actions">
+                    <button class="btn btn-secondary" id="retry-quiz-btn">
+                        Coba Lagi
+                    </button>
+                    <a href="/dashboard" class="btn btn-primary">
+                        Kembali ke Dashboard
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        this.quizContainer.innerHTML = html;
+        
+        // Update lesson progress indicator
+        if (isPassed) {
+            document.getElementById('lesson-progress-bar').style.width = '100%';
+            document.getElementById('lesson-progress-text').textContent = '100% selesai';
+        }
+        
+        // Event listener untuk retry
+        document.getElementById('retry-quiz-btn').addEventListener('click', () => {
+            this.start();
+        });
+    }
+}
+
+// ========================================
+// CSS untuk feedback (inject ke head)
+// ========================================
+
+const feedbackStyles = `
+    <style>
+        .feedback {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            animation: fadeInUp 0.3s ease;
+        }
+        
+        .feedback.correct {
+            background: rgba(46, 213, 115, 0.1);
+            border: 2px solid var(--success);
+        }
+        
+        .feedback.incorrect {
+            background: rgba(235, 87, 87, 0.1);
+            border: 2px solid #EB5757;
+        }
+        
+        .feedback-icon {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .feedback.correct .feedback-icon {
+            color: var(--success);
+        }
+        
+        .feedback.incorrect .feedback-icon {
+            color: #EB5757;
+        }
+        
+        .feedback-text {
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        .feedback.correct .feedback-text {
+            color: var(--success);
+        }
+        
+        .feedback.incorrect .feedback-text {
+            color: #EB5757;
+        }
+        
+        .result-emoji {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .result-actions button,
+        .result-actions a {
+            flex: 1;
+            min-width: 150px;
+        }
+    </style>
+`;
+
+// Inject styles
+document.head.insertAdjacentHTML('beforeend', feedbackStyles);
+
+// ========================================
+// EXPOSE TO WINDOW
+// ========================================
+
+window.Quiz = Quiz;
